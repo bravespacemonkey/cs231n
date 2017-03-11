@@ -158,6 +158,7 @@ class KNearestNeighbor(object):
       # neighbors. Store these labels in closest_y.                           #
       # Hint: Look up the function numpy.argsort.                             #
       #########################################################################
+      print 
       closest_y = self.y_train[np.argsort(dists[i,:])[:k]].tolist()
       #########################################################################
       # TODO:                                                                 #

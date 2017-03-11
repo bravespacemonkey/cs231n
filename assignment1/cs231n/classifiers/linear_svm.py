@@ -28,20 +28,22 @@ def svm_loss_naive(W, X, y, reg):
   for i in xrange(num_train):
     scores = X[i].dot(W)
     correct_class_score = scores[y[i]]
+
     for j in xrange(num_classes):
       if j == y[i]:
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
-
+        dW[:,j] += X[i].T
+        dW[:,y[i]] -= X[i].T
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
-
+  dW /= num_train
   # Add regularization to the loss.
   loss += 0.5 * reg * np.sum(W * W)
-
+  dW += reg * W
   #############################################################################
   # TODO:                                                                     #
   # Compute the gradient of the loss function and store it dW.                #
@@ -60,6 +62,12 @@ def svm_loss_vectorized(W, X, y, reg):
   Structured SVM loss function, vectorized implementation.
 
   Inputs and outputs are the same as svm_loss_naive.
+    Inputs:
+  - W: A numpy array of shape (D, C) containing weights.
+  - X: A numpy array of shape (N, D) containing a minibatch of data.
+  - y: A numpy array of shape (N,) containing training labels; y[i] = c means
+    that X[i] has label c, where 0 <= c < C.
+  - reg: (float) regularization strength
   """
   loss = 0.0
   dW = np.zeros(W.shape) # initialize the gradient as zero
@@ -69,12 +77,24 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W)
+  correct_scores = (scores[np.arange(0, scores.shape[0]), y]).reshape((X.shape[0],1))
+  delta = np.ones(scores.shape)
+  loss = scores - correct_scores + delta
+  loss[loss < 0] = 0 # as per hinge loss
+  loss[np.arange(0, scores.shape[0]), y] = 0 # remove the loss for the correct scores
+  loss = loss.sum()
+  loss /= X.shape[0] # normalize
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
-
+  l = scores - correct_scores + delta
+  l[l<0] = 0
+  l[l>0] = 1
+  l[np.arange(0, scores.shape[0]), y] = 0
+  l[np.arange(0, scores.shape[0]), y] = -1 * l.sum(axis = 1)
+  dW = np.dot(X.T, l)
+  dW /= X.shape[0] # normalize
   #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the gradient for the structured SVM     #
